@@ -5,7 +5,7 @@ Each milestone begins only after the preceding scope is reviewed. Paid services 
 | Milestone | Outcome |
 |---|---|
 | **M0 — Product and architecture foundation** | Product boundaries, architecture, security requirements, repository hygiene, and roadmap. No application scaffolding. |
-| **M1 — Backend foundation** | Django, Django REST Framework, PostgreSQL configuration, environment handling, health checks, structured logging, baseline tests, and project structure. |
+| **M1 — Backend foundation** | Django 5.2 LTS and DRF foundation, PostgreSQL configuration, environment-aware settings, operational endpoints, structured logging, scoped throttling, tests, and a minimal custom user model. |
 | **M2 — Authentication and accounts** | Email/password accounts, verification, reset, safe session or token lifecycle, endpoint-specific throttling, and authentication audit events. |
 | **M3 — Projects and assets** | Project ownership, versionable creation inputs, secure local uploads, validation, authorization, quotas, and storage abstraction. |
 | **M4 — Generation engine and mock provider** | Persistent state machine, async orchestration, provider contract, deterministic mock, idempotency, retries, and failure simulations. |

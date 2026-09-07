@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: adsyde
+      POSTGRES_USER: adsyde
+      POSTGRES_PASSWORD: adsyde
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adsyde -d adsyde"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - adsyde-postgres:/var/lib/postgresql/data
+  web:
+    build: .
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      DATABASE_URL: postgresql://adsyde:adsyde@db:5432/adsyde
+      SECRET_KEY: local-compose-only-not-for-shared-environments
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+volumes:
+  adsyde-postgres:
