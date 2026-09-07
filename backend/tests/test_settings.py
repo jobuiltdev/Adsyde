@@ -9,5 +9,7 @@ def test_safe_baseline_settings():
     assert settings.REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] == [
         "rest_framework.permissions.IsAuthenticated"
     ]
-    assert settings.REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] == []
+    assert settings.REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] == [
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
+    ]
     assert settings.DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql"

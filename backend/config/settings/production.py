@@ -6,6 +6,11 @@ from .base import *  # noqa: F403
 from .base import LOCAL_DATABASE_URL, LOCAL_SECRET_KEY
 from .environment import env_bool, env_list, require_production
 
+EMAIL_BACKEND = require_production("EMAIL_BACKEND")
+FRONTEND_BASE_URL = require_production(
+    "FRONTEND_BASE_URL", lambda value: value.startswith("https://")
+).rstrip("/")
+
 SECRET_KEY = require_production(
     "SECRET_KEY", lambda value: value != LOCAL_SECRET_KEY and len(value) >= 32
 )

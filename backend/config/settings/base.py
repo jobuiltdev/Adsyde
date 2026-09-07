@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -21,6 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "apps.accounts",
     "apps.core",
 ]
@@ -82,7 +84,7 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
@@ -94,8 +96,31 @@ REST_FRAMEWORK = {
         "health": env("THROTTLE_HEALTH_RATE", "120/min"),
         "readiness": env("THROTTLE_READINESS_RATE", "60/min"),
         "test": env("THROTTLE_TEST_RATE", "2/min"),
+        "auth_register": env("THROTTLE_AUTH_REGISTER_RATE", "5/min"),
+        "auth_login": env("THROTTLE_AUTH_LOGIN_RATE", "5/min"),
+        "auth_verify": env("THROTTLE_AUTH_VERIFY_RATE", "10/hour"),
+        "auth_verification_resend": env("THROTTLE_AUTH_VERIFICATION_RESEND_RATE", "3/hour"),
+        "auth_refresh": env("THROTTLE_AUTH_REFRESH_RATE", "20/min"),
+        "auth_password_reset": env("THROTTLE_AUTH_PASSWORD_RESET_RATE", "5/hour"),
+        "auth_password_reset_confirm": env("THROTTLE_AUTH_PASSWORD_RESET_CONFIRM_RATE", "10/hour"),
+        "auth_logout": env("THROTTLE_AUTH_LOGOUT_RATE", "20/hour"),
+        "account_update": env("THROTTLE_ACCOUNT_UPDATE_RATE", "20/hour"),
     },
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(env("JWT_ACCESS_LIFETIME_MINUTES", "15"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(env("JWT_REFRESH_LIFETIME_DAYS", "7"))),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+}
+
+EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "Adsyde <no-reply@localhost>")
+FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
+EMAIL_VERIFICATION_TIMEOUT = int(env("EMAIL_VERIFICATION_TIMEOUT_SECONDS", "86400"))
+PASSWORD_RESET_TIMEOUT = int(env("PASSWORD_RESET_TIMEOUT_SECONDS", "3600"))
 
 LOG_LEVEL = env("LOG_LEVEL", "INFO").upper()
 LOGGING = {

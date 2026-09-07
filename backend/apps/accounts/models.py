@@ -14,6 +14,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now, editable=False)
+    email_verified_at = models.DateTimeField(null=True, blank=True, editable=False)
     objects = UserManager()
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: list[str] = []
@@ -30,3 +31,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return self.email
+
+    @property
+    def email_verified(self) -> bool:
+        return self.email_verified_at is not None
