@@ -30,6 +30,10 @@ class JSONFormatter(logging.Formatter):
             "account_id",
             "project_id",
             "asset_id",
+            "generation_id",
+            "provider",
+            "error_code",
+            "prompt_length",
         ):
             if hasattr(record, field):
                 payload[field] = getattr(record, field)

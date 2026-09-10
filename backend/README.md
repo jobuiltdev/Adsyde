@@ -78,3 +78,24 @@ Storage uses Django's storage interface. Local files are placed under `MEDIA_ROO
 Project deletion is deliberately hard-delete while no generation or financial history depends on projects. Cascading asset records schedule physical deletion with `transaction.on_commit()`, as does direct asset deletion, so rollback cannot leave a retained database record pointing to a deliberately removed file. Upload validation happens before storage. Quota checking and record creation lock the project row; if database creation fails after file storage, the file is explicitly removed.
 
 Validated original image bytes are preserved in M3. EXIF and other embedded metadata are therefore not claimed to be stripped; raster normalization and privacy-oriented metadata removal are required before production. This avoids silent quality or transparency changes until a tested normalization policy is introduced.
+
+## Generation engine
+
+Generation APIs are project-scoped and authenticated:
+
+- `GET|POST /api/v1/projects/{project_id}/generations/`
+- `GET /api/v1/projects/{project_id}/generations/{generation_id}/`
+- `POST /api/v1/projects/{project_id}/generations/{generation_id}/cancel/`
+- `GET /api/v1/projects/{project_id}/generations/{generation_id}/result/`
+
+Submission accepts a prompt, `9:16`, `1:1`, or `16:9` aspect ratio, a configurable 5–20 second duration, and `mock-standard` or `mock-premium`. Prompts default to a 4,000-character maximum. Ownership is inherited through the project, and a locked user row protects the default five-active-generation cap. The API commits a `queued` record before enqueueing work with `transaction.on_commit()`.
+
+The lifecycle is `draft → queued → submitted → processing → completed`, with explicit failure and cancellation transitions. `submitted` or `processing` work can enter `unknown` when provider acceptance or state is uncertain; bounded reconciliation can then return it to processing or resolve it to completed/failed. Completed, failed, and cancelled states never regress. Every transition is centralized behind row-locked services.
+
+The provider package defines typed request/status objects, a neutral provider contract, error taxonomy, and registry. M4 registers only the deterministic `mock` provider. It simulates success, slow processing, rejection, provider failure, transient and persistent unavailability, timeout before acceptance, timeout after possible acceptance, malformed responses, reconciliation success/failure, and cancellation. Stable idempotency keys produce stable mock job IDs. Real providers and credentials remain deferred to M6R.
+
+Celery uses JSON serialization, late acknowledgement, rejection on worker loss, bounded exponential submission retries, and Redis as its local broker. Polling uses configurable countdown tasks rather than a busy loop or Celery Beat. Important provider identifiers are persisted before follow-up work is queued, allowing polling/reconciliation to resume after a worker crash. Duplicate tasks short-circuit from persisted state. Provider event receipts have a unique provider/event identifier; duplicate and late events are retained harmlessly without overwriting terminal state.
+
+Successful mock work writes a tiny runtime MP4 container marker through Django storage. It is explicitly mock infrastructure, not an AI-generated or playable advertisement. Result content is available only through the ownership-checked endpoint; storage paths are never serialized. Runtime media remains ignored by Git and future object storage can replace the backend.
+
+Local Compose includes PostgreSQL, Redis, the API, and a Celery worker. Run `docker compose up --build` for the complete stack. Tests execute tasks eagerly and deterministically; no network provider is contacted. Generation submit, cancel, and status scopes default to `20/hour`, `30/hour`, and `240/hour` per authenticated user. Production retry timing, provider-specific webhook signatures, real media validation, and providers without native idempotency require explicit design during real-provider validation.
