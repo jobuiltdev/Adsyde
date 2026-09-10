@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.credits",
     "apps.payments",
     "apps.ad_builder",
+    "apps.finishing",
     "apps.core",
 ]
 MIDDLEWARE = [
@@ -140,6 +141,10 @@ REST_FRAMEWORK = {
         "ad_plan_mutation": env("THROTTLE_AD_PLAN_MUTATION_RATE", "240/hour"),
         "ad_plan_plan": env("THROTTLE_AD_PLAN_PLAN_RATE", "60/hour"),
         "ad_plan_generate": env("THROTTLE_AD_PLAN_GENERATE_RATE", "20/hour"),
+        "finish_create": env("THROTTLE_FINISH_CREATE_RATE", "30/hour"),
+        "finish_mutation": env("THROTTLE_FINISH_MUTATION_RATE", "120/hour"),
+        "finish_render": env("THROTTLE_FINISH_RENDER_RATE", "30/hour"),
+        "finish_download": env("THROTTLE_FINISH_DOWNLOAD_RATE", "240/hour"),
     },
 }
 

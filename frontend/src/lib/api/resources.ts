@@ -1,5 +1,5 @@
 import { api, authenticatedBlob } from "./client";
-import type { AdPlan, Asset, AssetCategory, CreditPackage, CreditTransaction, CreditWallet, Generation, GenerationOptions, Page, Payment, PlanRevision, Project, User } from "@/lib/types";
+import type { AdFinish, AdPlan, Asset, AssetCategory, CreditPackage, CreditTransaction, CreditWallet, Generation, GenerationOptions, Page, Payment, PlanRevision, Project, RenderedAd, User } from "@/lib/types";
 
 export const authApi = {
   login: (email: string, password: string) => api<{ access: string; refresh: string }>("/auth/login/", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -31,6 +31,8 @@ export const generationsApi = {
   create: (projectId: string, data: { prompt: string; aspect_ratio: string; duration_seconds: number; model: string }) => api<Generation>(`/projects/${projectId}/generations/`, { method: "POST", body: JSON.stringify(data) }),
   cancel: (projectId: string, id: string) => api<Generation>(`/projects/${projectId}/generations/${id}/cancel/`, { method: "POST" }),
   result: (projectId: string, id: string) => authenticatedBlob(`/projects/${projectId}/generations/${id}/result/`),
+  regenerate: (id:string,key:string) => api<Generation>(`/generations/${id}/regenerate/`, {method:"POST",headers:{"Idempotency-Key":key}}),
+  duplicate: (id:string) => api<{mode:"guided"|"prompt";plan_id?:string;project_id?:string;prompt?:string;model?:string;aspect_ratio?:string;duration_seconds?:number}>(`/generations/${id}/duplicate/`, {method:"POST"}),
 };
 export const creditsApi = {
   wallet: () => api<CreditWallet>("/credits/wallet/"),
@@ -51,4 +53,12 @@ export const adPlansApi = {
   plan: (projectId: string, planId: string, key: string) => api<PlanRevision>(`/projects/${projectId}/ad-plans/${planId}/plan/`, { method: "POST", headers: { "Idempotency-Key": key } }),
   updateRevision: (projectId: string, planId: string, revisionId: string, data: Record<string, unknown>) => api<PlanRevision>(`/projects/${projectId}/ad-plans/${planId}/revisions/${revisionId}/`, { method: "PATCH", body: JSON.stringify(data) }),
   generate: (projectId: string, planId: string, revisionId: string) => api<Generation>(`/projects/${projectId}/ad-plans/${planId}/revisions/${revisionId}/generate/`, { method: "POST" }),
+};
+export const finishesApi = {
+  list: (generationId:string) => api<AdFinish[]>(`/generations/${generationId}/finishes/`),
+  create: (generationId:string) => api<AdFinish>(`/generations/${generationId}/finishes/`, {method:"POST"}),
+  update: (finishId:string, data:Record<string,unknown>, key:string) => api<AdFinish["revisions"][number]>(`/finishes/${finishId}/`, {method:"PATCH",headers:{"Idempotency-Key":key},body:JSON.stringify(data)}),
+  render: (finishId:string, revisionId:string) => api<RenderedAd>(`/finishes/${finishId}/revisions/${revisionId}/render/`, {method:"POST"}),
+  output: (outputId:string) => authenticatedBlob(`/finished-ads/${outputId}/content/`),
+  captions: (finishId:string, revisionId:string, format:"srt"|"vtt") => authenticatedBlob(`/finishes/${finishId}/revisions/${revisionId}/captions/${format}/`),
 };

@@ -10,4 +10,5 @@ urlpatterns = [
     path("api/v1/", include("apps.credits.urls")),
     path("api/v1/", include("apps.payments.urls")),
     path("api/v1/", include("apps.ad_builder.urls")),
+    path("api/v1/", include("apps.finishing.urls")),
 ]
