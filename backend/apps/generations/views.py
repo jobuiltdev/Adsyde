@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.credits.exceptions import InvalidPricingOption
+from apps.credits.pricing import PricingUnavailable, quote_generation
+from apps.credits.services import reserve_generation
 from apps.projects.models import Project
 from apps.providers.exceptions import InvalidProviderResponseError
 from apps.providers.registry import generation_options, get_active_provider, get_provider
@@ -74,6 +77,10 @@ class GenerationListCreateView(GenerationOwnershipMixin, generics.ListAPIView):
                 status="queued",
                 **serializer.validated_data,
             )
+            try:
+                reserve_generation(generation)
+            except PricingUnavailable as exc:
+                raise InvalidPricingOption from exc
             logger.info(
                 "generation.created",
                 extra={
@@ -132,7 +139,13 @@ class GenerationOptionsView(APIView):
     throttle_scope = "generation_options"
 
     def get(self, request):
-        return Response(generation_options())
+        options = generation_options()
+        for model in options["models"]:
+            model["credit_prices"] = {
+                str(duration): quote_generation(model["key"], duration).credits
+                for duration in model["durations"]
+            }
+        return Response(options)
 
 
 class MockProviderCallbackView(APIView):

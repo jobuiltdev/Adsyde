@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.assets",
     "apps.generations",
     "apps.providers",
+    "apps.credits",
     "apps.core",
 ]
 MIDDLEWARE = [
@@ -127,6 +128,8 @@ REST_FRAMEWORK = {
         "generation_status": env("THROTTLE_GENERATION_STATUS_RATE", "240/hour"),
         "generation_options": env("THROTTLE_GENERATION_OPTIONS_RATE", "120/hour"),
         "provider_callback": env("THROTTLE_PROVIDER_CALLBACK_RATE", "120/min"),
+        "credit_wallet": env("THROTTLE_CREDIT_WALLET_RATE", "120/hour"),
+        "credit_history": env("THROTTLE_CREDIT_HISTORY_RATE", "120/hour"),
     },
 }
 
@@ -173,6 +176,10 @@ PROVIDER_RESULT_FETCH_TIMEOUT_SECONDS = int(env("PROVIDER_RESULT_FETCH_TIMEOUT_S
 PROVIDER_RESULT_ALLOWED_HOSTS = tuple(env_list("PROVIDER_RESULT_ALLOWED_HOSTS"))
 MOCK_PROVIDER_WEBHOOK_SECRET = env("MOCK_PROVIDER_WEBHOOK_SECRET", "")
 PROVIDER_WEBHOOK_TOLERANCE_SECONDS = int(env("PROVIDER_WEBHOOK_TOLERANCE_SECONDS", "300"))
+CREDIT_PRICING_VERSION = env("CREDIT_PRICING_VERSION", "development-v1")
+CREDIT_GENERATION_RATES = {"mock-standard": 12, "mock-premium": 18}
+CREDIT_DEVELOPMENT_INITIAL_GRANT = 0
+CREDIT_DEVELOPMENT_GRANTS_ENABLED = False
 
 LOG_LEVEL = env("LOG_LEVEL", "INFO").upper()
 LOGGING = {

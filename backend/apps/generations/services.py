@@ -148,7 +148,11 @@ def complete_generation(generation_id):
                 generation.provider_job_id
             )
             ingest_result(generation, descriptor)
-        return transition_locked(generation, GenerationStatus.COMPLETED)
+        result = transition_locked(generation, GenerationStatus.COMPLETED)
+        from apps.credits.services import charge_generation
+
+        charge_generation(generation.pk)
+        return result
 
 
 def fail_generation(generation_id, code, detail):
@@ -156,9 +160,13 @@ def fail_generation(generation_id, code, detail):
         generation = Generation.objects.select_for_update().get(pk=generation_id)
         if generation.status in TERMINAL_STATUSES:
             return generation
-        return transition_locked(
+        result = transition_locked(
             generation, GenerationStatus.FAILED, error_code=code, error_detail=detail
         )
+        from apps.credits.services import release_generation
+
+        release_generation(generation.pk)
+        return result
 
 
 def process_provider_event(generation_id, provider_key, event_id, event_type, provider_job_id=""):
@@ -189,6 +197,9 @@ def process_provider_event(generation_id, provider_key, event_id, event_type, pr
                 error_code="GENERATION_FAILED",
                 error_detail="Generation failed at the provider.",
             )
+            from apps.credits.services import release_generation
+
+            release_generation(generation.pk)
         elif event_type == "processing" and generation.status == GenerationStatus.UNKNOWN:
             result = transition_locked(generation, GenerationStatus.PROCESSING)
         else:
@@ -212,7 +223,12 @@ def cancel_generation(generation):
             raise ValidationError("The provider does not support cancellation.")
         if not provider.cancel(generation.provider_job_id):
             raise ValidationError("Cancellation could not be confirmed.")
-        return transition_generation(
+        result = transition_generation(
             generation.pk, GenerationStatus.CANCELLED, cancel_confirmed_at=timezone.now()
         )
-    return transition_generation(generation.pk, GenerationStatus.CANCELLED)
+    else:
+        result = transition_generation(generation.pk, GenerationStatus.CANCELLED)
+    from apps.credits.services import release_generation
+
+    release_generation(generation.pk)
+    return result

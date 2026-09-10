@@ -33,6 +33,7 @@ The frontend is a separate Next.js application and proxies browser API requests 
 - [Backend development](backend/README.md)
 - [Frontend development](frontend/README.md)
 - [Provider integration readiness](docs/provider-readiness.md)
+- [Credit accounting](docs/credit-accounting.md)
 
 ## Current scope
 

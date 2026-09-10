@@ -7,6 +7,7 @@ const model = {
   aspect_ratios: ["9:16", "1:1"] as Array<"9:16" | "1:1" | "16:9">,
   durations: [5, 10],
   supports_reference_images: false,
+  credit_prices: { "5": 60, "10": 120 },
 };
 
 describe("generation capability selection", () => {

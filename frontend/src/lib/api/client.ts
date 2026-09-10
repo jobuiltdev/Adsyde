@@ -13,7 +13,7 @@ function detailText(detail: unknown): string | null {
 }
 
 export function errorMessage(code: string, detail: unknown): string {
-  const safe: Record<string, string> = { throttled: "Too many requests. Please wait and try again.", not_authenticated: "Your session has expired. Please sign in again.", authentication_failed: "Your session has expired. Please sign in again.", not_found: "We couldn't find that item.", permission_denied: "You don't have access to that item.", generation_limit_reached: "You already have the maximum number of active generations." };
+  const safe: Record<string, string> = { throttled: "Too many requests. Please wait and try again.", not_authenticated: "Your session has expired. Please sign in again.", authentication_failed: "Your session has expired. Please sign in again.", not_found: "We couldn't find that item.", permission_denied: "You don't have access to that item.", generation_limit_reached: "You already have the maximum number of active generations.", INSUFFICIENT_CREDITS: "You do not have enough available credits for this generation." };
   return safe[code] ?? detailText(detail) ?? "Something went wrong. Please try again.";
 }
 

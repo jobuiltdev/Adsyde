@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from rest_framework import serializers
 
@@ -56,6 +57,8 @@ class GenerationCreateSerializer(serializers.Serializer):
 class GenerationSerializer(serializers.ModelSerializer):
     result_available = serializers.SerializerMethodField()
     result_url = serializers.SerializerMethodField()
+    credit_cost = serializers.SerializerMethodField()
+    credit_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Generation
@@ -71,6 +74,8 @@ class GenerationSerializer(serializers.ModelSerializer):
             "error_detail",
             "result_available",
             "result_url",
+            "credit_cost",
+            "credit_status",
             "submitted_at",
             "started_at",
             "completed_at",
@@ -91,3 +96,15 @@ class GenerationSerializer(serializers.ModelSerializer):
         )
         request = self.context.get("request")
         return request.build_absolute_uri(path) if request else path
+
+    def get_credit_cost(self, obj):
+        try:
+            return obj.credit_charge.quoted_credits
+        except (AttributeError, ObjectDoesNotExist):
+            return None
+
+    def get_credit_status(self, obj):
+        try:
+            return obj.credit_charge.status
+        except (AttributeError, ObjectDoesNotExist):
+            return None

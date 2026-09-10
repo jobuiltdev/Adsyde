@@ -2,10 +2,11 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { assetsApi, generationsApi, projectsApi } from "@/lib/api/resources";
-import type { Asset, GenerationOptions, Project } from "@/lib/types";
+import { assetsApi, creditsApi, generationsApi, projectsApi } from "@/lib/api/resources";
+import type { Asset, CreditWallet, GenerationOptions, Project } from "@/lib/types";
 import { effectivePrompt, type PromptMode } from "@/lib/prompt";
 import { safeGenerationSelection, validGenerationSelection } from "@/lib/generation-options";
+import { canAffordGeneration, creditShortfall } from "@/lib/credits";
 import { Button, Notice, Skeleton, Textarea } from "./ui";
 import { PrivateImage } from "./private-media";
 
@@ -13,6 +14,7 @@ export function PromptStudio({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<Project | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [options, setOptions] = useState<GenerationOptions | null>(null);
+  const [wallet, setWallet] = useState<CreditWallet | null>(null);
   const [mode, setMode] = useState<PromptMode>("exact");
   const [prompt, setPrompt] = useState("");
   const [modelKey, setModelKey] = useState("");
@@ -44,12 +46,18 @@ export function PromptStudio({ projectId }: { projectId: string }) {
       .catch(() =>
         setOptionsError("Generation options could not be loaded. Please try again later."),
       );
+    creditsApi.wallet().then(setWallet).catch(() =>
+      setOptionsError("Your available credits could not be loaded. Please try again later."),
+    );
   }, [projectId]);
 
   const model = useMemo(
     () => options?.models.find((item) => item.key === modelKey),
     [modelKey, options],
   );
+  const creditCost = model?.credit_prices[String(duration)];
+  const affordable = canAffordGeneration(wallet?.available, creditCost);
+  const insufficient = wallet !== null && creditCost !== undefined && !affordable;
 
   function selectModel(key: string) {
     const next = options?.models.find((item) => item.key === key);
@@ -106,7 +114,7 @@ export function PromptStudio({ projectId }: { projectId: string }) {
         <div className="section"><h2>Duration</h2><div className="duration-row">{model?.durations.map((item) => <Button type="button" variant={duration === item ? "primary" : "secondary"} key={item} onClick={() => setDuration(item)} aria-pressed={duration === item}>{item}s</Button>)}</div></div>
         {assets.length > 0 && <div className="section"><h2>Reference assets <small className="muted">optional context</small></h2><p className="muted">Selections stay in this editing session; provider reference inputs are deferred.</p><div className="asset-grid">{assets.map((asset) => <label className="asset-choice" key={asset.id}><input type="checkbox" checked={selected.includes(asset.id)} onChange={() => toggle(asset.id)} /><PrivateImage load={() => mediaLoad(asset.id)} alt="" /><span>{asset.original_filename}</span></label>)}</div></div>}
       </section>
-      <aside className="studio-side"><div className="card summary"><p className="eyebrow">Generation setup</p><h2>{ratio} video</h2><p>{duration} seconds · {model?.display_name ?? "Options loading"}</p><p>{mode === "exact" ? "Prompt stays exactly as written." : "Local enhancement is active."}</p><p>{selected.length} reference{selected.length === 1 ? "" : "s"} selected</p><Button style={{ width: "100%" }} disabled={busy || !prompt.trim() || !validGenerationSelection(model, ratio, duration) || Boolean(optionsError)}>{busy ? "Queueing generation…" : "Generate video"}</Button><small className="muted">Submitting once is enough. We’ll track uncertain jobs safely.</small></div></aside>
+      <aside className="studio-side"><div className="card summary"><p className="eyebrow">Generation setup</p><h2>{ratio} video</h2><p>{duration} seconds · {model?.display_name ?? "Options loading"}</p><p>{mode === "exact" ? "Prompt stays exactly as written." : "Local enhancement is active."}</p><p>{selected.length} reference{selected.length === 1 ? "" : "s"} selected</p><hr/><p><strong>Generation cost</strong><br/>{creditCost === undefined ? "Unavailable" : `${creditCost} credits`}</p><p><strong>Available</strong><br/>{wallet ? `${wallet.available} credits` : "Loading…"}</p>{insufficient && <Notice kind="error">You need {creditShortfall(wallet.available, creditCost)} more credits.</Notice>}<Button style={{ width: "100%" }} disabled={busy || !prompt.trim() || !validGenerationSelection(model, ratio, duration) || Boolean(optionsError) || !affordable}>{busy ? "Queueing generation…" : "Generate video"}</Button><small className="muted">Submitting once is enough. We’ll track uncertain jobs safely.</small></div></aside>
     </form>
   </main>;
 }

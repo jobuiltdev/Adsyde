@@ -1,5 +1,5 @@
 import { api, authenticatedBlob } from "./client";
-import type { Asset, AssetCategory, Generation, GenerationOptions, Page, Project, User } from "@/lib/types";
+import type { Asset, AssetCategory, CreditTransaction, CreditWallet, Generation, GenerationOptions, Page, Project, User } from "@/lib/types";
 
 export const authApi = {
   login: (email: string, password: string) => api<{ access: string; refresh: string }>("/auth/login/", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -31,4 +31,8 @@ export const generationsApi = {
   create: (projectId: string, data: { prompt: string; aspect_ratio: string; duration_seconds: number; model: string }) => api<Generation>(`/projects/${projectId}/generations/`, { method: "POST", body: JSON.stringify(data) }),
   cancel: (projectId: string, id: string) => api<Generation>(`/projects/${projectId}/generations/${id}/cancel/`, { method: "POST" }),
   result: (projectId: string, id: string) => authenticatedBlob(`/projects/${projectId}/generations/${id}/result/`),
+};
+export const creditsApi = {
+  wallet: () => api<CreditWallet>("/credits/wallet/"),
+  transactions: () => api<Page<CreditTransaction>>("/credits/transactions/"),
 };
