@@ -1,7 +1,6 @@
 import base64
 import logging
 
-from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -109,8 +108,11 @@ def transition_locked(generation, target, **fields):
     generation.status = target
     if target == GenerationStatus.SUBMITTED and generation.submitted_at is None:
         generation.submitted_at = now
+        generation.provider_accepted_at = now
     if target == GenerationStatus.PROCESSING and generation.started_at is None:
         generation.started_at = now
+    if target == GenerationStatus.UNKNOWN and generation.unknown_since is None:
+        generation.unknown_since = now
     if target in TERMINAL_STATUSES and generation.completed_at is None:
         generation.completed_at = now
     for name, value in fields.items():
@@ -140,8 +142,12 @@ def complete_generation(generation_id):
         if generation.status in TERMINAL_STATUSES:
             return generation
         if not generation.result_file:
-            generation.result_file.save("result.mp4", ContentFile(MOCK_VIDEO), save=False)
-            generation.result_mime_type = "video/mp4"
+            from .ingestion import ingest_result
+
+            descriptor = get_provider(generation.provider_key).fetch_result(
+                generation.provider_job_id
+            )
+            ingest_result(generation, descriptor)
         return transition_locked(generation, GenerationStatus.COMPLETED)
 
 
@@ -155,26 +161,42 @@ def fail_generation(generation_id, code, detail):
         )
 
 
-def process_provider_event(generation_id, provider_key, event_id, event_type):
+def process_provider_event(generation_id, provider_key, event_id, event_type, provider_job_id=""):
     with transaction.atomic():
         generation = Generation.objects.select_for_update().get(pk=generation_id)
-        _, created = ProviderEvent.objects.get_or_create(
+        event, created = ProviderEvent.objects.get_or_create(
             provider_key=provider_key,
             event_id=event_id,
-            defaults={"generation": generation, "event_type": event_type},
+            defaults={
+                "generation": generation,
+                "event_type": event_type,
+                "provider_job_id": provider_job_id,
+            },
         )
-        if not created or generation.status in TERMINAL_STATUSES:
+        if not created:
+            return generation
+        if generation.status in TERMINAL_STATUSES:
+            event.processed_at = timezone.now()
+            event.processing_outcome = "terminal_ignored"
+            event.save(update_fields=["processed_at", "processing_outcome"])
             return generation
         if event_type == "completed":
-            return complete_generation(generation.pk)
-        if event_type == "failed":
-            return transition_locked(
+            result = complete_generation(generation.pk)
+        elif event_type == "failed":
+            result = transition_locked(
                 generation,
                 GenerationStatus.FAILED,
                 error_code="GENERATION_FAILED",
                 error_detail="Generation failed at the provider.",
             )
-        return generation
+        elif event_type == "processing" and generation.status == GenerationStatus.UNKNOWN:
+            result = transition_locked(generation, GenerationStatus.PROCESSING)
+        else:
+            result = generation
+        event.processed_at = timezone.now()
+        event.processing_outcome = "processed"
+        event.save(update_fields=["processed_at", "processing_outcome"])
+        return result
 
 
 def cancel_generation(generation):
@@ -182,8 +204,15 @@ def cancel_generation(generation):
         return generation
     if generation.status in {GenerationStatus.COMPLETED, GenerationStatus.FAILED}:
         raise ValidationError("A terminal generation cannot be cancelled.")
+    now = timezone.now()
+    Generation.objects.filter(pk=generation.pk).update(cancel_requested_at=now)
     if generation.provider_job_id:
         provider = get_provider(generation.provider_key)
+        if not provider.capabilities.supports_cancel:
+            raise ValidationError("The provider does not support cancellation.")
         if not provider.cancel(generation.provider_job_id):
             raise ValidationError("Cancellation could not be confirmed.")
+        return transition_generation(
+            generation.pk, GenerationStatus.CANCELLED, cancel_confirmed_at=timezone.now()
+        )
     return transition_generation(generation.pk, GenerationStatus.CANCELLED)

@@ -3,8 +3,10 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 
 from apps.providers.exceptions import ProviderAcceptanceUnknownError, ProviderError
+from apps.providers.policy import RetryDecision, RetryPolicy
 from apps.providers.registry import get_provider
 from apps.providers.types import GenerationRequest, ProviderStatus
 
@@ -22,7 +24,8 @@ logger = logging.getLogger(__name__)
 
 def request_for(generation):
     return GenerationRequest(
-        idempotency_key=str(generation.idempotency_key),
+        generation_id=str(generation.pk),
+        external_reference=str(generation.idempotency_key),
         prompt=generation.prompt,
         aspect_ratio=generation.aspect_ratio,
         duration_seconds=generation.duration_seconds,
@@ -56,7 +59,10 @@ def submit_generation_task(self, generation_id):
                 )
         return GenerationStatus.UNKNOWN
     except ProviderError as exc:
-        if exc.retryable and generation.submission_attempts < settings.GENERATION_MAX_TASK_ATTEMPTS:
+        decision = RetryPolicy(settings.GENERATION_MAX_TASK_ATTEMPTS).submission_decision(
+            exc, generation.submission_attempts, provider.capabilities
+        )
+        if decision == RetryDecision.RETRY:
             raise self.retry(exc=exc, countdown=2 ** (generation.submission_attempts - 1)) from exc
         fail_generation(generation_id, exc.code, str(exc))
         return GenerationStatus.FAILED
@@ -64,7 +70,9 @@ def submit_generation_task(self, generation_id):
         current = Generation.objects.select_for_update().get(pk=generation_id)
         if current.status != GenerationStatus.QUEUED:
             return current.status
-        transition_locked(current, GenerationStatus.SUBMITTED, provider_job_id=result.job_id)
+        transition_locked(
+            current, GenerationStatus.SUBMITTED, provider_job_id=result.provider_job_id
+        )
         transaction.on_commit(
             lambda: poll_generation_task.apply_async(
                 args=[str(current.pk)], countdown=settings.GENERATION_POLL_INTERVAL_SECONDS
@@ -119,10 +127,14 @@ def reconcile_generation_task(generation_id):
         if generation.status != GenerationStatus.UNKNOWN:
             return generation.status
         generation.reconciliation_attempts += 1
-        generation.save(update_fields=["reconciliation_attempts", "updated_at"])
+        generation.last_reconciled_at = timezone.now()
+        generation.save(
+            update_fields=["reconciliation_attempts", "last_reconciled_at", "updated_at"]
+        )
     try:
         provider = get_provider(generation.provider_key)
         result = provider.reconcile(
+            str(generation.idempotency_key),
             generation.provider_job_id,
             scenario=generation.mock_scenario,
             attempt=generation.reconciliation_attempts,
@@ -139,8 +151,8 @@ def reconcile_generation_task(generation_id):
     if generation.reconciliation_attempts >= settings.GENERATION_MAX_RECONCILIATION_ATTEMPTS:
         fail_generation(
             generation_id,
-            "UNKNOWN_PROVIDER_STATE",
-            "Provider state could not be reconciled.",
+            "PROVIDER_STATE_UNRESOLVED",
+            "The provider could not conclusively confirm this generation.",
         )
         return GenerationStatus.FAILED
     transition_generation(generation_id, GenerationStatus.PROCESSING)

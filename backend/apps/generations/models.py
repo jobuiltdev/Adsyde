@@ -53,7 +53,13 @@ class Generation(models.Model):
     reconciliation_attempts = models.PositiveSmallIntegerField(default=0)
     mock_scenario = models.CharField(max_length=32, default="success", editable=False)
     submitted_at = models.DateTimeField(null=True, blank=True)
+    provider_accepted_at = models.DateTimeField(null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
+    unknown_since = models.DateTimeField(null=True, blank=True)
+    last_reconciled_at = models.DateTimeField(null=True, blank=True)
+    cancel_requested_at = models.DateTimeField(null=True, blank=True)
+    cancel_confirmed_at = models.DateTimeField(null=True, blank=True)
+    result_ingested_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -72,6 +78,11 @@ class Generation(models.Model):
                 condition=Q(status__in=GenerationStatus.values), name="generation_status_valid"
             ),
         ]
+        indexes = [
+            models.Index(fields=("provider_key", "provider_job_id"), name="gen_provider_job_idx"),
+            models.Index(fields=("status",), name="gen_status_idx"),
+            models.Index(fields=("project", "-created_at"), name="gen_project_created_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.project_id}:{self.id}"
@@ -84,6 +95,9 @@ class ProviderEvent(models.Model):
     event_id = models.CharField(max_length=255)
     event_type = models.CharField(max_length=32)
     received_at = models.DateTimeField(auto_now_add=True)
+    provider_job_id = models.CharField(max_length=255, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    processing_outcome = models.CharField(max_length=32, blank=True)
 
     class Meta:
         constraints = [

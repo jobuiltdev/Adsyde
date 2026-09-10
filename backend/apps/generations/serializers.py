@@ -2,7 +2,7 @@ from django.conf import settings
 from django.urls import reverse
 from rest_framework import serializers
 
-from apps.providers.registry import get_provider
+from apps.providers.registry import get_active_provider
 
 from .models import AspectRatio, Generation
 
@@ -37,10 +37,20 @@ class GenerationCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("Duration is outside the supported range.")
         return value
 
-    def validate_model(self, value):
-        if value not in get_provider("mock").supported_models:
-            raise serializers.ValidationError("The selected model is not supported.")
-        return value
+    def validate(self, attrs):
+        provider = get_active_provider()
+        model = next((item for item in provider.models if item.key == attrs["model"]), None)
+        if model is None or not model.enabled:
+            raise serializers.ValidationError({"model": ["The selected model is not supported."]})
+        if attrs["aspect_ratio"] not in model.supported_aspect_ratios:
+            raise serializers.ValidationError(
+                {"aspect_ratio": ["The selected aspect ratio is not supported by this model."]}
+            )
+        if attrs["duration_seconds"] not in model.supported_durations:
+            raise serializers.ValidationError(
+                {"duration_seconds": ["The selected duration is not supported by this model."]}
+            )
+        return attrs
 
 
 class GenerationSerializer(serializers.ModelSerializer):

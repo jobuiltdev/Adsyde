@@ -7,11 +7,15 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.projects.models import Project
+from apps.providers.exceptions import InvalidProviderResponseError
+from apps.providers.registry import generation_options, get_active_provider, get_provider
+from apps.providers.webhooks import verify_signature
 
 from .models import Generation
 from .serializers import GenerationCreateSerializer, GenerationSerializer
@@ -66,7 +70,7 @@ class GenerationListCreateView(GenerationOwnershipMixin, generics.ListAPIView):
             generation = Generation.objects.create(
                 project=project,
                 created_by=request.user,
-                provider_key="mock",
+                provider_key=get_active_provider().key,
                 status="queued",
                 **serializer.validated_data,
             )
@@ -121,3 +125,48 @@ class GenerationResultView(GenerationOwnershipMixin, APIView):
         except FileNotFoundError as exc:
             raise Http404 from exc
         return FileResponse(source, content_type=generation.result_mime_type)
+
+
+class GenerationOptionsView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "generation_options"
+
+    def get(self, request):
+        return Response(generation_options())
+
+
+class MockProviderCallbackView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "provider_callback"
+
+    def post(self, request):
+        payload = request.body
+        if not verify_signature(
+            settings.MOCK_PROVIDER_WEBHOOK_SECRET,
+            request.headers.get("X-Adsyde-Timestamp", ""),
+            request.headers.get("X-Adsyde-Signature", ""),
+            payload,
+            settings.PROVIDER_WEBHOOK_TOLERANCE_SECONDS,
+        ):
+            return Response({"detail": "Invalid callback signature."}, status=401)
+        try:
+            event = get_provider("mock").parse_callback(payload)
+        except InvalidProviderResponseError:
+            return Response({"detail": "Invalid callback payload."}, status=400)
+        generation = get_object_or_404(
+            Generation,
+            provider_key="mock",
+            provider_job_id=event.provider_job_id,
+        )
+        from .services import process_provider_event
+
+        process_provider_event(
+            generation.pk,
+            "mock",
+            event.event_id,
+            event.event_type,
+            event.provider_job_id,
+        )
+        return Response(status=204)

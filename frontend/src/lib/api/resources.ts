@@ -1,5 +1,5 @@
 import { api, authenticatedBlob } from "./client";
-import type { Asset, AssetCategory, Generation, Page, Project, User } from "@/lib/types";
+import type { Asset, AssetCategory, Generation, GenerationOptions, Page, Project, User } from "@/lib/types";
 
 export const authApi = {
   login: (email: string, password: string) => api<{ access: string; refresh: string }>("/auth/login/", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -25,6 +25,7 @@ export const assetsApi = {
   content: (projectId: string, id: string) => authenticatedBlob(`/projects/${projectId}/assets/${id}/content/`),
 };
 export const generationsApi = {
+  options: () => api<GenerationOptions>("/generation-options/"),
   list: (projectId: string) => api<Page<Generation>>(`/projects/${projectId}/generations/`),
   get: (projectId: string, id: string) => api<Generation>(`/projects/${projectId}/generations/${id}/`),
   create: (projectId: string, data: { prompt: string; aspect_ratio: string; duration_seconds: number; model: string }) => api<Generation>(`/projects/${projectId}/generations/`, { method: "POST", body: JSON.stringify(data) }),

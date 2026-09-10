@@ -4,10 +4,18 @@ from .views import (
     GenerationCancelView,
     GenerationDetailView,
     GenerationListCreateView,
+    GenerationOptionsView,
     GenerationResultView,
+    MockProviderCallbackView,
 )
 
 urlpatterns = [
+    path("generation-options/", GenerationOptionsView.as_view(), name="generation-options"),
+    path(
+        "provider-callbacks/mock/",
+        MockProviderCallbackView.as_view(),
+        name="mock-provider-callback",
+    ),
     path(
         "projects/<uuid:project_id>/generations/",
         GenerationListCreateView.as_view(),
