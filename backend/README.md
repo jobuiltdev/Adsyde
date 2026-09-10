@@ -60,3 +60,21 @@ The API does not prescribe browser token storage. The frontend credential transp
 Local email uses Django's console backend and tests use the in-memory backend, so no network email is sent. Production requires an explicit email backend and HTTPS `FRONTEND_BASE_URL`; provider selection is deferred. Verification and reset URLs are built from `FRONTEND_BASE_URL`. Configure `DEFAULT_FROM_EMAIL`, `EMAIL_VERIFICATION_TIMEOUT_SECONDS`, and `PASSWORD_RESET_TIMEOUT_SECONDS` as needed.
 
 Authentication endpoints use distinct configurable throttle scopes: registration, login, verification submission, verification resend, refresh, reset request, reset confirmation, logout, and account update. Defaults are conservative local starting values, not settled production policy. Deployed counters should move to a shared cache after Redis is introduced in a later milestone. Adaptive account/IP login protection is also deferred; permanent account lockouts are intentionally not used.
+
+## Projects and assets
+
+Authenticated project APIs are available at `/api/v1/projects/` and `/api/v1/projects/{id}/`. Projects contain a name plus optional business name, description, brand style, and target audience. Ownership is always assigned from the authenticated request and every query is owner-scoped; probing another account's identifiers returns the same `404` behavior as a missing resource. Lists are paginated and newest-first.
+
+Assets use these project-scoped routes:
+
+- `GET|POST /api/v1/projects/{project_id}/assets/`
+- `GET|DELETE /api/v1/projects/{project_id}/assets/{asset_id}/`
+- `GET /api/v1/projects/{project_id}/assets/{asset_id}/content/`
+
+Uploads accept multipart JPEG, PNG, and WebP images in the `product_image`, `logo`, or `reference_image` category. SVG, GIF, malformed files, and other formats are rejected. Pillow decodes and verifies the actual content; request MIME and filename extensions are not authoritative. The canonical MIME, dimensions, and byte size are persisted. Default limits are 10 MiB per file, 8,192 pixels per dimension, 40 million total pixels, and 30 assets per project. A separate 11 MiB request-body limit rejects oversized requests from their declared content length before parsing, while Django's upload-memory threshold controls when files spill to temporary storage. Deployment proxies must enforce the same request limit, including for clients that omit content length. These limits and the project-create, project-mutation, asset-upload, asset-delete, and asset-access throttle rates are configurable through the environment variables in `.env.example`.
+
+Storage uses Django's storage interface. Local files are placed under `MEDIA_ROOT` with server-generated `projects/<project UUID>/assets/<asset UUID>.<canonical extension>` keys. APIs never return storage paths; content is served only after JWT authentication and an ownership lookup. A later S3-compatible backend can replace local storage through configuration and use temporary delivery URLs without changing asset records or ownership rules.
+
+Project deletion is deliberately hard-delete while no generation or financial history depends on projects. Cascading asset records schedule physical deletion with `transaction.on_commit()`, as does direct asset deletion, so rollback cannot leave a retained database record pointing to a deliberately removed file. Upload validation happens before storage. Quota checking and record creation lock the project row; if database creation fails after file storage, the file is explicitly removed.
+
+Validated original image bytes are preserved in M3. EXIF and other embedded metadata are therefore not claimed to be stripped; raster normalization and privacy-oriented metadata removal are required before production. This avoids silent quality or transparency changes until a tested normalization policy is introduced.

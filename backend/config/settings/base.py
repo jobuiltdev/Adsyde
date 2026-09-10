@@ -24,11 +24,14 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "apps.accounts",
+    "apps.projects",
+    "apps.assets",
     "apps.core",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "apps.core.middleware.RequestIDMiddleware",
+    "apps.core.middleware.RequestSizeLimitMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -75,6 +78,13 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(env("FILE_UPLOAD_MAX_MEMORY_SIZE", "2621440"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(env("DATA_UPLOAD_MAX_MEMORY_SIZE", "11534336"))
+REQUEST_MAX_BODY_SIZE = int(env("REQUEST_MAX_BODY_SIZE", "11534336"))
+ASSET_MAX_FILE_SIZE = int(env("ASSET_MAX_FILE_SIZE", "10485760"))
+ASSET_MAX_DIMENSION = int(env("ASSET_MAX_DIMENSION", "8192"))
+ASSET_MAX_PIXELS = int(env("ASSET_MAX_PIXELS", "40000000"))
+ASSET_MAX_PER_PROJECT = int(env("ASSET_MAX_PER_PROJECT", "30"))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -105,6 +115,11 @@ REST_FRAMEWORK = {
         "auth_password_reset_confirm": env("THROTTLE_AUTH_PASSWORD_RESET_CONFIRM_RATE", "10/hour"),
         "auth_logout": env("THROTTLE_AUTH_LOGOUT_RATE", "20/hour"),
         "account_update": env("THROTTLE_ACCOUNT_UPDATE_RATE", "20/hour"),
+        "project_create": env("THROTTLE_PROJECT_CREATE_RATE", "20/hour"),
+        "project_mutation": env("THROTTLE_PROJECT_MUTATION_RATE", "60/hour"),
+        "asset_upload": env("THROTTLE_ASSET_UPLOAD_RATE", "30/hour"),
+        "asset_delete": env("THROTTLE_ASSET_DELETE_RATE", "60/hour"),
+        "asset_access": env("THROTTLE_ASSET_ACCESS_RATE", "120/hour"),
     },
 }
 

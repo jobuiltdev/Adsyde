@@ -22,7 +22,15 @@ class JSONFormatter(logging.Formatter):
         }
         if record.exc_info:
             payload["exception_type"] = record.exc_info[0].__name__
-        for field in ("http_method", "http_path", "status_code", "outcome", "account_id"):
+        for field in (
+            "http_method",
+            "http_path",
+            "status_code",
+            "outcome",
+            "account_id",
+            "project_id",
+            "asset_id",
+        ):
             if hasattr(record, field):
                 payload[field] = getattr(record, field)
         return json.dumps(payload, separators=(",", ":"))
