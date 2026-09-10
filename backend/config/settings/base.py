@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.providers",
     "apps.credits",
     "apps.payments",
+    "apps.ad_builder",
     "apps.core",
 ]
 MIDDLEWARE = [
@@ -135,6 +136,10 @@ REST_FRAMEWORK = {
         "payment_initialize": env("THROTTLE_PAYMENT_INITIALIZE_RATE", "10/hour"),
         "payment_status": env("THROTTLE_PAYMENT_STATUS_RATE", "120/hour"),
         "payment_webhook": env("THROTTLE_PAYMENT_WEBHOOK_RATE", "300/min"),
+        "ad_plan_create": env("THROTTLE_AD_PLAN_CREATE_RATE", "30/hour"),
+        "ad_plan_mutation": env("THROTTLE_AD_PLAN_MUTATION_RATE", "240/hour"),
+        "ad_plan_plan": env("THROTTLE_AD_PLAN_PLAN_RATE", "60/hour"),
+        "ad_plan_generate": env("THROTTLE_AD_PLAN_GENERATE_RATE", "20/hour"),
     },
 }
 

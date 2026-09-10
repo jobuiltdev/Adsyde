@@ -1,5 +1,5 @@
 import { api, authenticatedBlob } from "./client";
-import type { Asset, AssetCategory, CreditPackage, CreditTransaction, CreditWallet, Generation, GenerationOptions, Page, Payment, Project, User } from "@/lib/types";
+import type { AdPlan, Asset, AssetCategory, CreditPackage, CreditTransaction, CreditWallet, Generation, GenerationOptions, Page, Payment, PlanRevision, Project, User } from "@/lib/types";
 
 export const authApi = {
   login: (email: string, password: string) => api<{ access: string; refresh: string }>("/auth/login/", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -42,4 +42,13 @@ export const paymentsApi = {
   initialize: (packageKey: string, idempotencyKey: string) => api<Payment>("/payments/initialize/", { method: "POST", headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ package: packageKey }) }),
   get: (id: string) => api<Payment>(`/payments/${id}/`),
   verify: (id: string) => api<Payment>(`/payments/${id}/verify/`, { method: "POST" }),
+};
+export const adPlansApi = {
+  list: (projectId: string) => api<AdPlan[]>(`/projects/${projectId}/ad-plans/`),
+  get: (projectId: string, planId: string) => api<AdPlan>(`/projects/${projectId}/ad-plans/${planId}/`),
+  create: (projectId: string, data: Record<string, unknown>) => api<AdPlan>(`/projects/${projectId}/ad-plans/`, { method: "POST", body: JSON.stringify(data) }),
+  update: (projectId: string, planId: string, data: Record<string, unknown>) => api<AdPlan>(`/projects/${projectId}/ad-plans/${planId}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  plan: (projectId: string, planId: string, key: string) => api<PlanRevision>(`/projects/${projectId}/ad-plans/${planId}/plan/`, { method: "POST", headers: { "Idempotency-Key": key } }),
+  updateRevision: (projectId: string, planId: string, revisionId: string, data: Record<string, unknown>) => api<PlanRevision>(`/projects/${projectId}/ad-plans/${planId}/revisions/${revisionId}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  generate: (projectId: string, planId: string, revisionId: string) => api<Generation>(`/projects/${projectId}/ad-plans/${planId}/revisions/${revisionId}/generate/`, { method: "POST" }),
 };

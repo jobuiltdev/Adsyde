@@ -63,6 +63,10 @@ class ProjectDetailView(OwnedProjectMixin, generics.RetrieveUpdateDestroyAPIView
         return super().get_throttles()
 
     def perform_destroy(self, instance):
+        if instance.ad_plans.filter(revisions__generation__isnull=False).exists():
+            raise ValidationError(
+                {"project": ["Projects with generated ad history cannot be deleted."]}
+            )
         project_id = instance.pk
         instance.delete()
         logger.info(

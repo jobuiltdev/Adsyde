@@ -42,6 +42,17 @@ export function PromptStudio({ projectId }: { projectId: string }) {
         setModelKey(first.key);
         setRatio(first.aspect_ratios[0]);
         setDuration(first.durations[0]);
+        const raw = sessionStorage.getItem("adsyde.planHandoff");
+        if (raw) {
+          try {
+            const handoff = JSON.parse(raw) as { projectId:string; prompt:string; model:string; aspect_ratio:"9:16"|"1:1"|"16:9"; duration_seconds:number; assets:string[] };
+            const chosen = result.models.find((item) => item.key === handoff.model);
+            if (handoff.projectId === projectId && chosen && chosen.aspect_ratios.includes(handoff.aspect_ratio) && chosen.durations.includes(handoff.duration_seconds)) {
+              setPrompt(handoff.prompt); setModelKey(handoff.model); setRatio(handoff.aspect_ratio); setDuration(handoff.duration_seconds); setSelected(handoff.assets); setMode("exact");
+              sessionStorage.removeItem("adsyde.planHandoff");
+            }
+          } catch { sessionStorage.removeItem("adsyde.planHandoff"); }
+        }
       })
       .catch(() =>
         setOptionsError("Generation options could not be loaded. Please try again later."),

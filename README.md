@@ -27,6 +27,8 @@ The frontend is a separate Next.js application and proxies browser API requests 
 
 ## Documentation
 
+- [Guided Ad Builder](docs/ad-builder.md)
+
 - [Product and architecture](docs/architecture.md)
 - [Milestone roadmap](docs/roadmap.md)
 - [Engineering and security rules](docs/engineering-security.md)
