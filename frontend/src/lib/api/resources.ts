@@ -1,5 +1,5 @@
 import { api, authenticatedBlob } from "./client";
-import type { Asset, AssetCategory, CreditTransaction, CreditWallet, Generation, GenerationOptions, Page, Project, User } from "@/lib/types";
+import type { Asset, AssetCategory, CreditPackage, CreditTransaction, CreditWallet, Generation, GenerationOptions, Page, Payment, Project, User } from "@/lib/types";
 
 export const authApi = {
   login: (email: string, password: string) => api<{ access: string; refresh: string }>("/auth/login/", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -35,4 +35,11 @@ export const generationsApi = {
 export const creditsApi = {
   wallet: () => api<CreditWallet>("/credits/wallet/"),
   transactions: () => api<Page<CreditTransaction>>("/credits/transactions/"),
+};
+export const paymentsApi = {
+  packages: () => api<CreditPackage[]>("/payments/packages/"),
+  list: () => api<Page<Payment>>("/payments/"),
+  initialize: (packageKey: string, idempotencyKey: string) => api<Payment>("/payments/initialize/", { method: "POST", headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ package: packageKey }) }),
+  get: (id: string) => api<Payment>(`/payments/${id}/`),
+  verify: (id: string) => api<Payment>(`/payments/${id}/verify/`, { method: "POST" }),
 };

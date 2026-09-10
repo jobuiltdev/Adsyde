@@ -34,6 +34,7 @@ The frontend is a separate Next.js application and proxies browser API requests 
 - [Frontend development](frontend/README.md)
 - [Provider integration readiness](docs/provider-readiness.md)
 - [Credit accounting](docs/credit-accounting.md)
+- [Nigerian payment architecture](docs/payments.md)
 
 ## Current scope
 

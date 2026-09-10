@@ -75,6 +75,25 @@ def grant_credits(user, amount, reason, reference):
 
 
 @transaction.atomic
+def record_purchase(user, amount, payment_id):
+    reference = f"payment:{payment_id}:purchase"
+    existing = CreditTransaction.objects.filter(reference=reference).first()
+    if existing:
+        return existing
+    wallet = get_or_create_wallet(user)
+    wallet.balance += amount
+    wallet.save(update_fields=["balance", "updated_at"])
+    return _entry(
+        wallet,
+        CreditTransactionType.PURCHASE,
+        amount,
+        0,
+        reference,
+        "Credit purchase",
+    )
+
+
+@transaction.atomic
 def reserve_generation(generation):
     existing = (
         GenerationCharge.objects.select_for_update()

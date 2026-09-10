@@ -9,4 +9,6 @@ export type GenerationModelOption = { key: string; display_name: string; aspect_
 export type GenerationOptions = { provider: string; models: GenerationModelOption[] };
 export type CreditWallet = { balance: number; reserved: number; available: number };
 export type CreditTransaction = { id: string; type: string; amount: number; reserved_change: number; reason: string; generation_id: string | null; created_at: string };
+export type CreditPackage = { key: string; name: string; credits: number; amount_minor: number; currency: "NGN" };
+export type Payment = { id: string; internal_reference: string; package_key: string; package_name: string; currency: "NGN"; amount_minor: number; credits: number; status: "created" | "initialized" | "pending" | "verification_required" | "succeeded" | "failed" | "review_required"; authorization_url?: string | null; created_at: string };
 export type ApiErrorBody = { error?: { code?: string; detail?: unknown } };

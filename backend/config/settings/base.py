@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.generations",
     "apps.providers",
     "apps.credits",
+    "apps.payments",
     "apps.core",
 ]
 MIDDLEWARE = [
@@ -130,6 +131,10 @@ REST_FRAMEWORK = {
         "provider_callback": env("THROTTLE_PROVIDER_CALLBACK_RATE", "120/min"),
         "credit_wallet": env("THROTTLE_CREDIT_WALLET_RATE", "120/hour"),
         "credit_history": env("THROTTLE_CREDIT_HISTORY_RATE", "120/hour"),
+        "payment_packages": env("THROTTLE_PAYMENT_PACKAGES_RATE", "120/hour"),
+        "payment_initialize": env("THROTTLE_PAYMENT_INITIALIZE_RATE", "10/hour"),
+        "payment_status": env("THROTTLE_PAYMENT_STATUS_RATE", "120/hour"),
+        "payment_webhook": env("THROTTLE_PAYMENT_WEBHOOK_RATE", "300/min"),
     },
 }
 
@@ -180,6 +185,15 @@ CREDIT_PRICING_VERSION = env("CREDIT_PRICING_VERSION", "development-v1")
 CREDIT_GENERATION_RATES = {"mock-standard": 12, "mock-premium": 18}
 CREDIT_DEVELOPMENT_INITIAL_GRANT = 0
 CREDIT_DEVELOPMENT_GRANTS_ENABLED = False
+PAYMENTS_ENABLED = env_bool("PAYMENTS_ENABLED", False)
+PAYMENT_PROVIDER = env("PAYMENT_PROVIDER", "fake")
+PAYSTACK_SECRET_KEY = env("PAYSTACK_SECRET_KEY", "")
+PAYSTACK_CHECKOUT_HOSTS = ("checkout.paystack.com",)
+PAYSTACK_INITIALIZE_TIMEOUT_SECONDS = int(env("PAYSTACK_INITIALIZE_TIMEOUT_SECONDS", "15"))
+PAYSTACK_VERIFY_TIMEOUT_SECONDS = int(env("PAYSTACK_VERIFY_TIMEOUT_SECONDS", "15"))
+PAYMENT_CALLBACK_URL = env(
+    "PAYMENT_CALLBACK_URL", "http://localhost:3000/app/credits/payment-return"
+)
 
 LOG_LEVEL = env("LOG_LEVEL", "INFO").upper()
 LOGGING = {

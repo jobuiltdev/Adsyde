@@ -30,3 +30,12 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", True
 SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
 if env_bool("TRUST_PROXY_SSL_HEADER", False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if PAYMENTS_ENABLED:  # noqa: F405
+    PAYSTACK_SECRET_KEY = require_production(
+        "PAYSTACK_SECRET_KEY", lambda value: value.startswith("sk_test_") and len(value) > 20
+    )
+    PAYMENT_CALLBACK_URL = require_production(
+        "PAYMENT_CALLBACK_URL", lambda value: value.startswith("https://")
+    )
+    PAYMENT_PROVIDER = "paystack"
