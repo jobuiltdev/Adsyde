@@ -1,0 +1,1 @@
+import Link from "next/link"; export default function NotFound(){return <main className="page"><p className="eyebrow">404</p><h1>That page isn’t here.</h1><p>It may have moved, or you may not have access.</p><Link className="button primary" href="/app">Return to Adsyde</Link></main>}

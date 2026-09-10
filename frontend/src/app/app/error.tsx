@@ -1,0 +1,1 @@
+"use client"; import { Button,Notice } from "@/components/ui"; export default function ErrorPage({reset}:{error:Error&{digest?:string};reset:()=>void}){return <main className="page"><Notice kind="error">This page could not be loaded safely.</Notice><Button onClick={reset}>Try again</Button></main>}

@@ -1,0 +1,2 @@
+import Link from "next/link"; import { ProjectList } from "@/components/project-list";
+export default function ProjectsPage(){return <main className="page"><div className="page-head"><div><p className="eyebrow">Projects</p><h1>Your creative work.</h1><p>Keep every brand, asset, and generation in context.</p></div><Link className="button primary" href="/app/projects/new">New project</Link></div><ProjectList/></main>}

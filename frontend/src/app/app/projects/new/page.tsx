@@ -1,0 +1,2 @@
+import { ProjectForm } from "@/components/project-form";
+export default function NewProject(){return <main className="page"><div className="page-head"><div><p className="eyebrow">New project</p><h1>Set the creative context.</h1><p>You can refine these details at any time.</p></div></div><div className="split"><ProjectForm/><aside className="card"><h2>A useful foundation</h2><p>Give the project a clear name. Brand and audience context stay attached to the project for future creation tools.</p></aside></div></main>}

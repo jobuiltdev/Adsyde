@@ -51,6 +51,7 @@ node_modules/
 .yarn/cache/
 .yarn/install-state.gz
 .pnpm-store/
+*.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -88,4 +89,3 @@ debug-artifacts/
 .DS_Store
 Thumbs.db
 Desktop.ini
-

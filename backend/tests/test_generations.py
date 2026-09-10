@@ -279,5 +279,8 @@ def test_completed_result_is_private_and_has_no_storage_path(settings):
     assert APIClient().get(path).status_code == 401
     response = auth_client(generation.created_by).get(path)
     assert response.status_code == 200
+    payload = b"".join(response.streaming_content)
+    assert payload[4:8] == b"ftyp"
+    assert len(payload) > 1_000
     detail = auth_client(generation.created_by).get(path.removesuffix("result/"))
     assert "result_file" not in detail.json()

@@ -1,0 +1,2 @@
+import Link from "next/link";
+export function AuthShell({ children }: { children: React.ReactNode }) { return <main className="auth-page"><aside className="auth-side"><Link href="/" className="brand">Adsyde<span className="brand-dot">.</span></Link><h1>Make something worth watching.</h1><p>AI on your side.</p></aside><section className="auth-panel"><div className="auth-card">{children}</div></section></main>; }

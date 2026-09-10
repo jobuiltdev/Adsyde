@@ -1,0 +1,11 @@
+"use client";
+import { useEffect, useRef } from "react";
+
+export function Button({ className = "", variant = "primary", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" }) { return <button className={`button ${variant} ${className}`} {...props} />; }
+export function Field({ label, error, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string }) { const id = props.id ?? props.name; return <label className="field" htmlFor={id}><span>{label}</span><input id={id} {...props} />{error && <small role="alert">{error}</small>}</label>; }
+export function Textarea({ label, hint, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string }) { const id = props.id ?? props.name; return <label className="field" htmlFor={id}><span>{label}</span><textarea id={id} {...props} />{hint && <small>{hint}</small>}</label>; }
+export function Badge({ status }: { status: string }) { return <span className={`badge status-${status}`}>{status.replace("_", " ")}</span>; }
+export function EmptyState({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) { return <div className="empty"><div className="empty-mark">✦</div><h2>{title}</h2><p>{body}</p>{action}</div>; }
+export function Skeleton({ lines = 3 }: { lines?: number }) { return <div className="skeleton" aria-label="Loading">{Array.from({ length: lines }, (_, i) => <span key={i} />)}</div>; }
+export function Dialog({ open, title, children, onClose }: { open: boolean; title: string; children: React.ReactNode; onClose(): void }) { const ref = useRef<HTMLDialogElement>(null); useEffect(() => { if (open) ref.current?.showModal(); else ref.current?.close(); }, [open]); return <dialog ref={ref} onCancel={onClose} aria-labelledby="dialog-title"><div className="dialog-head"><h2 id="dialog-title">{title}</h2><button onClick={onClose} aria-label="Close dialog">×</button></div>{children}</dialog>; }
+export function Notice({ children, kind = "info" }: { children: React.ReactNode; kind?: "info" | "error" | "success" }) { return <div className={`notice ${kind}`} role={kind === "error" ? "alert" : "status"}>{children}</div>; }

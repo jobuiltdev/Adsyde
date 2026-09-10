@@ -1,0 +1,2 @@
+import Link from "next/link"; import { ProjectList } from "@/components/project-list";
+export default function Dashboard(){return <main className="page"><div className="page-head"><div><p className="eyebrow">Overview</p><h1>Bring the next idea to life.</h1><p>Your recent projects, ready when inspiration lands.</p></div><Link className="button primary" href="/app/projects/new">New project</Link></div><section><div className="section-head"><h2>Recent projects</h2><Link href="/app/projects">View all</Link></div><ProjectList limit={3}/></section></main>}

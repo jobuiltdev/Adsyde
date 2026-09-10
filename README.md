@@ -2,7 +2,7 @@
 
 Adsyde is a Nigeria-first advertising product for businesses and creators who need polished video advertisements. It will provide a guided creation flow for people who do not write prompts and a Prompt Studio for people who want direct control.
 
-Milestone 1 establishes the backend engineering foundation. No product workflow, generation provider, authentication API, billing, frontend, or deployment has been implemented.
+The current product includes the Django API, asynchronous local generation engine, and a Next.js creative workspace. Local development remains zero-spend and uses the deterministic mock provider.
 
 ## Product principles
 
@@ -23,7 +23,7 @@ adsyde/
 └── README.md
 ```
 
-The frontend and later service components will be added by their implementation milestones rather than maintained as empty placeholders.
+The frontend is a separate Next.js application and proxies browser API requests to Django during local development.
 
 ## Documentation
 
@@ -31,7 +31,8 @@ The frontend and later service components will be added by their implementation 
 - [Milestone roadmap](docs/roadmap.md)
 - [Engineering and security rules](docs/engineering-security.md)
 - [Backend development](backend/README.md)
+- [Frontend development](frontend/README.md)
 
 ## Current scope
 
-Milestone 1 implements infrastructure only. See the roadmap for later scope. Real provider validation is deliberately deferred until funding is available and must succeed before private beta.
+Run the backend stack from `backend/`, then run the Next.js application from `frontend/`. Real provider validation remains deliberately deferred until funding is available and must succeed before private beta.
