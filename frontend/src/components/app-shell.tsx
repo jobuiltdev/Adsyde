@@ -1,31 +1,12 @@
 "use client";
-
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { creditsApi } from "@/lib/api/resources";
-import { useAuth } from "@/lib/auth/auth-context";
-import { Button, Skeleton } from "./ui";
-
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, loading, logout } = useAuth();
-  const [available, setAvailable] = useState<number | null>(null);
-  const router = useRouter();
-  const path = usePathname();
-  useEffect(() => {
-    if (!loading && !user) router.replace(`/login?next=${encodeURIComponent(path)}`);
-    if (user) creditsApi.wallet().then((wallet) => setAvailable(wallet.available)).catch(() => {});
-  }, [loading, user, router, path]);
-  if (loading || !user) return <main className="page"><Skeleton lines={5} /></main>;
-  return <div className="app-layout">
-    <aside className="sidebar">
-      <Link className="brand" href="/app">Adsyde<span className="brand-dot">.</span></Link>
-      <nav className="nav" aria-label="Main navigation">
-        <Link href="/app">Overview</Link><Link href="/app/projects">Projects</Link>
-        <Link href="/app/projects/new">New project</Link><Link href="/app/credits">Credit activity</Link>
-      </nav>
-      <div className="sidebar-foot"><strong>{available === null ? "Credits unavailable" : `${available.toLocaleString()} credits`}</strong><small>{user.email}</small></div>
-    </aside>
-    <div className="app-main"><header className="app-header"><span className="eyebrow">Creative workspace</span><Button variant="secondary" onClick={() => void logout()}>Log out</Button></header>{children}</div>
-  </div>;
-}
+import Link from "next/link";import {usePathname,useRouter} from "next/navigation";import {useEffect,useRef,useState} from "react";import {creditsApi} from "@/lib/api/resources";import {useAuth} from "@/lib/auth/auth-context";import {Skeleton} from "./ui";
+type NavItem={href:string;label:string;exact?:boolean};const workspaceLinks:NavItem[]=[{href:"/app",label:"Dashboard",exact:true},{href:"/app/projects",label:"Projects"},{href:"/app/projects/new",label:"New Project",exact:true}];const accountLinks:NavItem[]=[{href:"/app/credits",label:"Credits"}];
+function current(path:string,href:string,exact=false){if(href==="/app/projects"&&path==="/app/projects/new")return false;return exact?path===href:path===href||path.startsWith(`${href}/`)}function nameFor(email:string){const local=email.split("@")[0].replace(/[._-]+/g," ").trim();return local?local.replace(/\b\w/g,letter=>letter.toUpperCase()):"Adsyde account"}
+export function AppShell({children}:{children:React.ReactNode}){const{user,loading,logout}=useAuth();const[available,setAvailable]=useState<number|null>(null);const[drawer,setDrawer]=useState(false);const[menu,setMenu]=useState(false);const menuRef=useRef<HTMLDivElement>(null);const menuButton=useRef<HTMLButtonElement>(null);const drawerButton=useRef<HTMLButtonElement>(null);const firstLink=useRef<HTMLAnchorElement>(null);const router=useRouter();const path=usePathname();
+useEffect(()=>{if(!loading&&!user)router.replace(`/login?next=${encodeURIComponent(path)}`);if(user)creditsApi.wallet().then(wallet=>setAvailable(wallet.available)).catch(()=>{})},[loading,user,router,path]);
+useEffect(()=>{if(!drawer&&!menu)return;function key(event:KeyboardEvent){if(event.key!=="Escape")return;if(drawer){setDrawer(false);drawerButton.current?.focus()}if(menu){setMenu(false);menuButton.current?.focus()}}function outside(event:PointerEvent){if(menu&&!menuRef.current?.contains(event.target as Node))setMenu(false)}document.addEventListener("keydown",key);document.addEventListener("pointerdown",outside);return()=>{document.removeEventListener("keydown",key);document.removeEventListener("pointerdown",outside)}},[drawer,menu]);
+useEffect(()=>{if(drawer)firstLink.current?.focus();document.body.classList.toggle("nav-open",drawer);return()=>document.body.classList.remove("nav-open")},[drawer]);
+if(loading||!user)return <main className="page"><Skeleton lines={5}/></main>;const name=nameFor(user.email);const initials=user.email.slice(0,2).toUpperCase();const credits=available===null?"Credits unavailable":`${available.toLocaleString()} credits`;const title=[...workspaceLinks,...accountLinks].find(item=>current(path,item.href,item.exact))?.label??(path==="/app/account"?"Profile & Account":path==="/app/settings"?"Settings":"Creative workspace");
+const navigation=(mobile=false)=><><div className="nav-group"><span>Workspace</span>{workspaceLinks.map((item,index)=><Link ref={mobile&&index===0?firstLink:undefined} key={item.href} href={item.href} aria-current={current(path,item.href,item.exact)?"page":undefined} onClick={()=>setDrawer(false)}>{item.label}</Link>)}</div><div className="nav-group"><span>Account</span>{accountLinks.map(item=><Link key={item.href} href={item.href} aria-current={current(path,item.href)?"page":undefined} onClick={()=>setDrawer(false)}>{item.label}</Link>)}</div></>;
+const actions=(mobile=false)=><div className={mobile?"drawer-account-actions":"account-menu-links"}><Link href="/app/account" onClick={()=>{setDrawer(false);setMenu(false)}}>Profile & Account</Link><Link href="/app/settings" onClick={()=>{setDrawer(false);setMenu(false)}}>Settings</Link><Link href="/app/credits" onClick={()=>{setDrawer(false);setMenu(false)}}>Credit Activity</Link><button onClick={()=>void logout()}>Log out</button></div>;
+return <div className="app-layout"><aside className="sidebar"><Link className="brand" href="/app">Adsyde<span className="brand-dot">.</span></Link><nav className="nav" aria-label="Main navigation">{navigation()}</nav><div className="account-control" ref={menuRef}>{menu&&<div className="account-menu" role="menu" aria-label="Account menu"><div className="account-menu-summary"><strong>{name}</strong><small title={user.email}>{user.email}</small><span>{credits}</span></div>{actions()}</div>}<button ref={menuButton} className="account-trigger" aria-haspopup="menu" aria-expanded={menu} onClick={()=>setMenu(open=>!open)}><span className="avatar" aria-hidden="true">{initials}</span><span className="account-copy"><strong>{name}</strong><small title={user.email}>{user.email}</small><span>{credits}</span></span><span aria-hidden="true">•••</span></button></div></aside><div className="app-main"><header className="mobile-header"><Link className="brand" href="/app">Adsyde<span className="brand-dot">.</span></Link><span>{title}</span><button ref={drawerButton} className="menu-button" aria-label="Open navigation menu" aria-expanded={drawer} aria-controls="mobile-navigation" onClick={()=>setDrawer(true)}><span/><span/><span/></button></header><header className="app-header"><span className="eyebrow">{title}</span></header>{children}</div>{drawer&&<div className="drawer-layer"><button className="drawer-backdrop" aria-label="Close navigation menu" onClick={()=>setDrawer(false)}/><aside id="mobile-navigation" className="mobile-drawer" aria-label="Mobile navigation"><div className="drawer-head"><Link className="brand" href="/app" onClick={()=>setDrawer(false)}>Adsyde<span className="brand-dot">.</span></Link><button className="drawer-close" aria-label="Close navigation menu" onClick={()=>{setDrawer(false);drawerButton.current?.focus()}}>×</button></div><nav className="nav">{navigation(true)}</nav><div className="drawer-profile"><div className="identity"><span className="avatar" aria-hidden="true">{initials}</span><span><strong>{name}</strong><small title={user.email}>{user.email}</small></span></div><strong>{credits}</strong>{actions(true)}</div></aside></div>}</div>}
