@@ -52,8 +52,8 @@ export function CreditActivity() {
       <div className="card"><p>Total balance</p><h2>{wallet.balance.toLocaleString()}</h2></div>
       <div className="card"><p>In active generations</p><h2>{wallet.reserved.toLocaleString()}</h2></div>
     </div>}
-    <section className="section"><div className="section-head"><h2>Buy credits</h2></div><div className="grid">
-      {packages.map((item) => <div className="card project-card" key={item.key}><p className="eyebrow">{item.name}</p><h2>{item.credits.toLocaleString()} credits</h2><p>{formatNgn(item.amount_minor)}</p><Button disabled={Boolean(buying)} onClick={() => void buy(item.key)}>{buying === item.key ? "Opening secure checkout…" : "Buy credits"}</Button></div>)}
+    <section className="section" id="buy-credits"><div className="section-head"><h2>Buy credits</h2></div><div className="grid">
+      {packages.map((item) => <div className="card credit-package-card" key={item.key}><p className="eyebrow">{item.name}</p><h2>{item.credits.toLocaleString()} credits</h2><p>{formatNgn(item.amount_minor)}</p><Button disabled={Boolean(buying)} onClick={() => void buy(item.key)}>{buying === item.key ? "Opening secure checkout…" : "Buy credits"}</Button></div>)}
     </div><p className="muted">Development package values are placeholders, not final pricing.</p></section>
     <section className="section card"><h2>Recent activity</h2><div className="generation-list">
       {items.map((item) => <div className="generation-row" key={item.id}><div><strong>{item.reason}</strong><small>{new Date(item.created_at).toLocaleString()}</small></div><strong>{creditActivityAmount(item.amount, item.reserved_change) > 0 ? "+" : ""}{creditActivityAmount(item.amount, item.reserved_change)} credits</strong></div>)}

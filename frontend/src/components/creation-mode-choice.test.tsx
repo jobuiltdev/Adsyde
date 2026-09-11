@@ -1,0 +1,2 @@
+import {render,screen} from "@testing-library/react";import {describe,expect,it} from "vitest";import {CreationModeChoice} from "./creation-mode-choice";
+describe("creation mode choice",()=>{it("keeps both explicit creation paths",()=>{render(<CreationModeChoice projectId="project-1"/>);expect(screen.getByRole("link",{name:/Guided Ad Builder/})).toHaveAttribute("href","/app/projects/project-1/create?mode=guided");expect(screen.getByRole("link",{name:/Prompt Studio/})).toHaveAttribute("href","/app/projects/project-1/create?mode=prompt")})});
